@@ -29,7 +29,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    // ✅ use explicit enum value, not plain string
     strategy: "jwt" as const,
   },
   secret: process.env.NEXTAUTH_SECRET,

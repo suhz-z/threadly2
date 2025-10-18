@@ -21,5 +21,28 @@ model User {
   name      String?
   email     String   @unique
   password  String
-  createdAt DateTime @default(now())
+  posts     Post[]
+  comments  Comment[]
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  content   String
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime  @default(now())
+  comments  Comment[]
+}
+
+model Comment {
+  id         String    @id @default(cuid())
+  content    String
+  author     User      @relation(fields: [authorId], references: [id])
+  authorId   String
+  post       Post      @relation(fields: [postId], references: [id])
+  postId     String
+  parentId   String?   // null for top-level comment
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies    Comment[] @relation("CommentReplies")
+  createdAt  DateTime  @default(now())
 }

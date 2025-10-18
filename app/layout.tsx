@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
-import { SidebarWrapper } from "@/components/sidebar/sidebarwrapper";
+import { SessionProviderWrapper } from "@/components/providers/sessionproviderwrapper";
+import { ThemeProviderWrapper } from "@/components/providers/themeprovider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,17 +24,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors`}
       >
-        <SessionProvider>
-        <div className="flex min-h-screen">
-            <SidebarWrapper>
-            <main className="flex-1 p-6 bg-gray-50">{children}</main>
-            </SidebarWrapper>
-          </div>
-        </SessionProvider>
+        <ThemeProviderWrapper>
+          <SessionProviderWrapper>{children}</SessionProviderWrapper>
+        </ThemeProviderWrapper>
       </body>
     </html>
   );
