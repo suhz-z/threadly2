@@ -58,26 +58,38 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // If session or email is missing, return 401
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const { content } = await req.json();
-    if (!content)
-      return NextResponse.json({ error: "Missing content" }, { status: 400 });
+
+    if (!content) {
+      return NextResponse.json(
+        { error: "Missing content" },
+        { status: 400 }
+      );
+    }
 
     const post = await prisma.post.create({
       data: {
         content,
-        author: { connect: { email: session.user?.email! } },
+        author: { connect: { email: session.user.email } }, // safe now
       },
-      include: {
-        author: true,
-      }
+      include: { author: true },
     });
 
     return NextResponse.json(post, { status: 201 });
   } catch (err) {
     console.error("Error creating post:", err);
-    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create post" },
+      { status: 500 }
+    );
   }
 }
