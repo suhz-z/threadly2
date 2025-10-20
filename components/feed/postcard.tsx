@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Reply } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronRight, Reply } from "lucide-react";
 import { Post, Comment } from "@/types/types";
 import { useSession } from "next-auth/react";
 
@@ -26,6 +26,7 @@ export function PostCard({ post }: PostCardProps) {
   const [replyContents, setReplyContents] = useState<Record<string, string>>({});
   const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
+  const [collapsedComments, setCollapsedComments] = useState<Record<string, boolean>>({});
   const [commentsVisible, setCommentsVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
@@ -47,6 +48,10 @@ export function PostCard({ post }: PostCardProps) {
 
   const handleChange = (id: string, value: string) => {
     setReplyContents((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const toggleCommentCollapse = (id: string) => {
+    setCollapsedComments((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const submitComment = async (parentId?: string) => {
@@ -87,15 +92,33 @@ export function PostCard({ post }: PostCardProps) {
 
   const renderReplies = (replies: Comment[]) =>
     replies.map((c) => (
-      <div key={c.id} className="ml-6 mt-3 border-l border-neutral-200 dark:border-neutral-700 pl-3">
+      <div
+        key={c.id}
+        className="ml-6 mt-3 border-l border-neutral-200 dark:border-neutral-700 pl-3"
+      >
         <div className="flex items-start justify-between text-sm">
           <div>
             <p className="flex items-center gap-2">
               <strong>{c.author?.name || "Unknown"}</strong>
               <span className="text-xs text-neutral-500">{timeAgo(c.createdAt)}</span>
             </p>
-            <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">{c.content}</p>
+            <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">
+              {c.content}
+            </p>
           </div>
+
+          {c.replies && c.replies.length > 0 && (
+            <button
+              onClick={() => toggleCommentCollapse(c.id)}
+              className="text-neutral-500 hover:text-neutral-700 dark:hover:text-white"
+            >
+              {collapsedComments[c.id] ? (
+                <ChevronRight size={14} />
+              ) : (
+                <ChevronDown size={14} />
+              )}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
@@ -121,12 +144,12 @@ export function PostCard({ post }: PostCardProps) {
           </div>
         )}
 
-        {c.replies && c.replies.length > 0 && renderReplies(c.replies)}
+        {!collapsedComments[c.id] && c.replies && renderReplies(c.replies)}
       </div>
     ));
 
   return (
-    <div className="w-full flex justify-center">
+    <div className="w-full flex justify-center ">
       <div className="max-w-200 w-full border-b border-neutral-200 dark:border-neutral-700 p-4 bg-white dark:bg-transparent">
         {/* Post Header */}
         <div className="mb-3 flex justify-between items-center">
@@ -138,7 +161,7 @@ export function PostCard({ post }: PostCardProps) {
 
         <p className="text-neutral-800 dark:text-neutral-300 mt-1">{post.content}</p>
 
-        {/* Comment Input */}
+        {/* Top-level comment input */}
         <div className="flex gap-2 mt-3 mb-3">
           <Input
             placeholder="Write a comment..."
@@ -164,7 +187,7 @@ export function PostCard({ post }: PostCardProps) {
           {comments.length} Comments
         </div>
 
-        {/* Comments Section (toggle visibility) */}
+        {/* Comments Section */}
         {commentsVisible && comments.length > 0 && (
           <div className="mt-2">{renderReplies(comments)}</div>
         )}

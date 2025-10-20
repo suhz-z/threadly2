@@ -8,10 +8,10 @@ import { Post } from "@/types/types";
 import { Card } from "@/components/ui/card";
 import { Home, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { redirect, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
+
 
 export default function FeedPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -21,9 +21,11 @@ export default function FeedPage() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  
+   if (!session) {
+    redirect("/login"); // server-side redirect
+  }
 
-  // 🧭 Fetch posts
+  //  Fetch posts
   const fetchPosts = async () => {
     const res = await fetch("/api/posts");
     const data: Post[] = await res.json();
@@ -36,7 +38,7 @@ export default function FeedPage() {
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
-  // 🗣️ Submit new post
+  //  Submit new post
   const submitPost = async () => {
     if (!newPost) return;
 
@@ -51,7 +53,7 @@ export default function FeedPage() {
     setNewPost("");
   };
 
-  // 🔐 Navigation and auth
+  //
   const handleLoginOrFeed = () => {
     if (session) router.push("/");
     else router.push("/login");
@@ -78,7 +80,7 @@ export default function FeedPage() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Theme Toggle replaces dropdown */}
+        {/* Theme Toggle */}
         <Button
           variant="outline"
           size="icon"
@@ -97,12 +99,13 @@ export default function FeedPage() {
         </Button>
       </aside>
 
-      {/* Main Feed */}
+      {/* Feed */}
       <main className="flex flex-col items-center flex-1 py-8 min-h-screen">
         <Card className="w-full max-w-2xl p-6 shadow-sm dark:shadow-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-2xl bg-white dark:bg-neutral-900 transition-shadow hover:shadow-md">
           {/* New Post Form */}
           <div className="flex w-full justify-center mb-6">
             <div className="flex w-full max-w-md gap-2 items-center">
+               {session?.user?.name} { ':'}
               <Input
                 placeholder="What's on your mind?"
                 value={newPost}
@@ -110,7 +113,9 @@ export default function FeedPage() {
                 className="flex-1"
               />
               <Button onClick={submitPost}>Post</Button>
+              
             </div>
+            
           </div>
 
           {/* Posts Feed */}
