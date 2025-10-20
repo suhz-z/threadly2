@@ -3,9 +3,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { MessageSquare, Reply } from "lucide-react";
 import { Post, Comment } from "@/types/types";
 import { useSession } from "next-auth/react";
+
+function timeAgo(timestamp: string | Date) {
+  const now = new Date();
+  const time = new Date(timestamp);
+  const diff = Math.floor((now.getTime() - time.getTime()) / 1000);
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+  return time.toLocaleDateString();
+}
 
 interface PostCardProps {
   post: Post;
@@ -13,13 +24,25 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   const [replyContents, setReplyContents] = useState<Record<string, string>>({});
+  const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
-  const [collapsedComments, setCollapsedComments] = useState<Record<string, boolean>>({});
+  const [commentsVisible, setCommentsVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
 
-  const toggleCollapse = (id: string) => {
-    setCollapsedComments((prev) => ({ ...prev, [id]: !prev[id] }));
+  const insertReply = (list: Comment[], parentId: string, newComment: Comment): Comment[] =>
+    list.map((c) => {
+      if (c.id === parentId) {
+        return { ...c, replies: [...(c.replies || []), newComment] };
+      }
+      if (c.replies && c.replies.length > 0) {
+        return { ...c, replies: insertReply(c.replies, parentId, newComment) };
+      }
+      return c;
+    });
+
+  const toggleReplyInput = (id: string) => {
+    setShowReplyInput((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleChange = (id: string, value: string) => {
@@ -27,114 +50,125 @@ export function PostCard({ post }: PostCardProps) {
   };
 
   const submitComment = async (parentId?: string) => {
-  const content = replyContents[parentId || "root"];
-  if (!content) return;
-  if (!session?.user?.email) {
-    console.error("You must be logged in to comment");
-    return;
-  }
+    const content = replyContents[parentId || "root"];
+    if (!content || !session?.user?.email) return;
 
-  setIsSubmitting(true);
-  try {
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content,
-        postId: post.id,
-        parentId: parentId || null,
-        userEmail: session.user.email, // ✅ include this
-      }),
-    });
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          postId: post.id,
+          parentId: parentId || null,
+          userEmail: session.user.email,
+        }),
+      });
 
-    if (!res.ok) {
-      console.error("Failed to submit comment", res.status);
-      return;
+      if (!res.ok) return;
+
+      const data: Comment = await res.json();
+      if (parentId) setComments((prev) => insertReply(prev, parentId, data));
+      else setComments((prev) => [data, ...prev]);
+
+      setReplyContents((prev) => ({ ...prev, [parentId || "root"]: "" }));
+      setShowReplyInput((prev) => ({ ...prev, [parentId || "root"]: false }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    const data: Comment = await res.json();
-
-    if (parentId) {
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === parentId
-            ? { ...c, replies: [...(c.replies || []), data] }
-            : c
-        )
-      );
-    } else {
-      setComments((prev) => [data, ...prev]);
-    }
-
-    setReplyContents((prev) => ({ ...prev, [parentId || "root"]: "" }));
-  } catch (err) {
-    console.error("Error submitting comment:", err);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  const toggleCommentsVisibility = () => {
+    setCommentsVisible((prev) => !prev);
+  };
 
   const renderReplies = (replies: Comment[]) =>
     replies.map((c) => (
-      <div key={c.id} className="ml-6 mt-2 border-l pl-2">
-        <div className="flex items-center justify-between">
-          <p>
-            <strong>{c.author?.name || "Unknown"}:</strong> {c.content}
-          </p>
-          {c.replies && c.replies.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-0"
-              onClick={() => toggleCollapse(c.id)}
-            >
-              {collapsedComments[c.id] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-            </Button>
-          )}
+      <div key={c.id} className="ml-6 mt-3 border-l border-neutral-200 dark:border-neutral-700 pl-3">
+        <div className="flex items-start justify-between text-sm">
+          <div>
+            <p className="flex items-center gap-2">
+              <strong>{c.author?.name || "Unknown"}</strong>
+              <span className="text-xs text-neutral-500">{timeAgo(c.createdAt)}</span>
+            </p>
+            <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">{c.content}</p>
+          </div>
         </div>
 
-        {/* Inline reply form */}
-        <div className="flex gap-2 mt-1">
-          <Input
-            placeholder="Reply..."
-            value={replyContents[c.id] || ""}
-            onChange={(e) => handleChange(c.id, e.target.value)}
-            className="flex-1"
-          />
-          <Button
-            size="sm"
-            disabled={isSubmitting}
-            onClick={() => submitComment(c.id)}
+        <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
+          <button
+            onClick={() => toggleReplyInput(c.id)}
+            className="flex items-center gap-1 hover:text-neutral-800 dark:hover:text-white"
           >
-            {isSubmitting ? "..." : "Reply"}
-          </Button>
+            <Reply size={12} /> Reply
+          </button>
         </div>
 
-        {!collapsedComments[c.id] && c.replies && renderReplies(c.replies)}
+        {showReplyInput[c.id] && (
+          <div className="flex gap-2 mt-2">
+            <Input
+              placeholder="Write a reply..."
+              value={replyContents[c.id] || ""}
+              onChange={(e) => handleChange(c.id, e.target.value)}
+              className="flex-1 text-sm"
+            />
+            <Button size="sm" disabled={isSubmitting} onClick={() => submitComment(c.id)}>
+              {isSubmitting ? "..." : "Send"}
+            </Button>
+          </div>
+        )}
+
+        {c.replies && c.replies.length > 0 && renderReplies(c.replies)}
       </div>
     ));
 
   return (
-    <div className="border rounded-md p-4 mb-4 bg-white dark:bg-neutral-800">
-      <p className="mb-2">
-        <strong>{post.author?.name || "Unknown"}</strong> - {post.content}
-      </p>
+    <div className="w-full flex justify-center">
+      <div className="max-w-200 w-full border-b border-neutral-200 dark:border-neutral-700 p-4 bg-white dark:bg-transparent">
+        {/* Post Header */}
+        <div className="mb-3 flex justify-between items-center">
+          <div>
+            <p className="font-semibold">{post.author?.name || "Unknown"}</p>
+            <span className="text-xs text-neutral-500">{timeAgo(post.createdAt)}</span>
+          </div>
+        </div>
 
-      {/* Top-level reply form */}
-      <div className="flex gap-2 mb-2">
-        <Input
-          placeholder="Reply..."
-          value={replyContents["root"] || ""}
-          onChange={(e) => handleChange("root", e.target.value)}
-          className="flex-1"
-        />
-        <Button size="sm" disabled={isSubmitting} onClick={() => submitComment()}>
-          {isSubmitting ? "..." : "Reply"}
-        </Button>
+        <p className="text-neutral-800 dark:text-neutral-300 mt-1">{post.content}</p>
+
+        {/* Comment Input */}
+        <div className="flex gap-2 mt-3 mb-3">
+          <Input
+            placeholder="Write a comment..."
+            value={replyContents["root"] || ""}
+            onChange={(e) => handleChange("root", e.target.value)}
+            className="flex-1 text-sm"
+          />
+          <Button size="sm" disabled={isSubmitting} onClick={() => submitComment()}>
+            {isSubmitting ? "..." : "Send"}
+          </Button>
+        </div>
+
+        {/* Comments Header */}
+        <div className="flex items-center gap-2 mb-2 text-sm text-neutral-500">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-neutral-500 hover:text-neutral-800 dark:hover:text-white"
+            onClick={toggleCommentsVisibility}
+          >
+            <MessageSquare size={14} />
+          </Button>
+          {comments.length} Comments
+        </div>
+
+        {/* Comments Section (toggle visibility) */}
+        {commentsVisible && comments.length > 0 && (
+          <div className="mt-2">{renderReplies(comments)}</div>
+        )}
       </div>
-
-      {/* Comments */}
-      <div>{renderReplies(comments)}</div>
     </div>
   );
 }

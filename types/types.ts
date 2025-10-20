@@ -7,14 +7,15 @@ export interface User {
 export interface Comment {
   id: string;
   content: string;
-  author?: User;
+  createdAt: string;
+  author?: { name?: string };
   replies?: Comment[];
-  parentId?: string | null;
 }
 
 export interface Post {
   id: string;
   content: string;
-  author?: User;
-  comments: Comment[];
+  createdAt: string;
+  author?: { name?: string };
+  comments?: Comment[];
 }

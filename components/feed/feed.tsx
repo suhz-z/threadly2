@@ -3,7 +3,7 @@
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 
 export function Feed() {
-  // Dummy feed for now
+  // Dummy 
   const posts = [
     { id: 1, author: "Alice", content: "Hello world!" },
     { id: 2, author: "Bob", content: "My first post!" },

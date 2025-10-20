@@ -20,7 +20,7 @@ export default function HomePage() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    router.push("/"); // redirect to landing after logout
+    router.push("/"); 
   };
 
   if (status === "loading") {
