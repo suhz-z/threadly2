@@ -61,7 +61,7 @@ export default function FeedPage() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    router.push("/");
+    router.push("/login");
   };
 
   return (
@@ -90,6 +90,7 @@ export default function FeedPage() {
         </Button>
 
         {/* Logout */}
+        {session && (
         <Button
           variant="ghost"
           className="mt-4 text-red-500 hover:text-red-600"
@@ -97,6 +98,7 @@ export default function FeedPage() {
         >
           <LogOut className="w-6 h-6" />
         </Button>
+        )}
       </aside>
 
       {/* Feed */}
