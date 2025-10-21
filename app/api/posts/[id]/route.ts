@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } } 
+  context: { params: Promise<{ id: string }> } 
 ) {
-  const id = params.id;
+  const { id } = await context.params; 
 
   try {
     const post = await prisma.post.findUnique({
