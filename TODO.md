@@ -1,3 +1,0 @@
-- [x] Update app/login/page.tsx to show loading state when session status is "loading"
-- [x] Update components/login-form.tsx to add loading state during sign-in process
-- [x] Update components/signup-form.tsx to add loading state during sign-up process

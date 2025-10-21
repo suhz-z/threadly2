@@ -1,3 +1,6 @@
+//  User login form component
+// Handles user authentication with NextAuth credentials provider
+
 "use client";
 
 import { cn } from "@/lib/utils";
@@ -21,17 +24,20 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+  // Form state management
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  // Form submission handler using NextAuth signIn
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
+    // Attempt login with credentials provider
     const res = await signIn("credentials", {
       redirect: false,
       email,
@@ -42,7 +48,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       setError("Invalid email or password");
       setIsLoading(false);
     } else {
-      router.replace("/feed"); // redirect on success
+      // Redirect to feed page on successful login
+      router.replace("/feed");
     }
   };
 

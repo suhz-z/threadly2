@@ -1,3 +1,6 @@
+//  Post card component with comments
+// Displays individual posts with nested commenting functionality
+
 "use client";
 
 import { useState } from "react";
@@ -13,6 +16,7 @@ import {
 import { Post, Comment } from "@/types/types";
 import { useSession } from "next-auth/react";
 
+// Utility function to format timestamps as relative time
 function timeAgo(timestamp: string | Date) {
   const now = new Date();
   const time = new Date(timestamp);
@@ -29,6 +33,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post }: PostCardProps) {
+  // State management for comment interactions
   const [replyContents, setReplyContents] = useState<Record<string, string>>({});
   const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
@@ -37,7 +42,7 @@ export function PostCard({ post }: PostCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
 
-  // Insert reply recursively funtion
+  // Recursively insert a new reply into the comment tree
   const insertReply = (list: Comment[], parentId: string, newComment: Comment): Comment[] =>
     list.map((c) => {
       if (c.id === parentId) {
@@ -49,7 +54,7 @@ export function PostCard({ post }: PostCardProps) {
       return c;
     });
 
-  //  Delete comment recursively from state
+  // Recursively delete a comment from the comment tree
   const deleteCommentFromList = (list: Comment[], id: string): Comment[] =>
     list
       .filter((c) => c.id !== id)
@@ -58,7 +63,7 @@ export function PostCard({ post }: PostCardProps) {
         replies: c.replies ? deleteCommentFromList(c.replies, id) : [],
       }));
 
-  //  Delete comment handler
+  // Handle comment deletion with confirmation
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("Delete this comment?")) return;
 
@@ -90,7 +95,7 @@ export function PostCard({ post }: PostCardProps) {
     setCollapsedComments((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  //  Submit comment or reply
+  // Submit a new comment or reply to the API
   const submitComment = async (parentId?: string) => {
     const content = replyContents[parentId || "root"];
     if (!content || !session?.user?.email) return;
@@ -111,9 +116,11 @@ export function PostCard({ post }: PostCardProps) {
       if (!res.ok) return;
 
       const data: Comment = await res.json();
+      // Add to local state: prepend for root comments, insert for replies
       if (parentId) setComments((prev) => insertReply(prev, parentId, data));
       else setComments((prev) => [data, ...prev]);
 
+      // Clear input and hide reply form
       setReplyContents((prev) => ({ ...prev, [parentId || "root"]: "" }));
       setShowReplyInput((prev) => ({ ...prev, [parentId || "root"]: false }));
     } catch (err) {

@@ -1,3 +1,6 @@
+// User registration form component
+// Handles user signup with validation and API integration
+
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -17,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+  // Form state management
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +29,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  // Form submission handler with validation and API call
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -48,6 +53,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       return;
     }
 
+    // Submit signup data to API
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -59,6 +65,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       setError(data.error || "Something went wrong");
       setIsLoading(false);
     } else {
+      // Redirect to login page on successful signup
       router.push("/login");
     }
   };

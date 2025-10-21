@@ -1,3 +1,6 @@
+// User login page
+// Handles authentication flow and redirects authenticated users to feed
+
 "use client"
 import { LoginForm } from "@/components/login-form"
 import { Loader2 } from "lucide-react";
@@ -6,15 +9,18 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function LoginPage() {
+  // Get current session status to handle redirects
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Redirect to feed if user is already authenticated
   useEffect(() => {
     if (status === "authenticated") {
       router.replace("/feed");
     }
   }, [status, router]);
 
+  // Show loading spinner while checking authentication or if user is already logged in
   if (status === "loading" || session) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-neutral-900 text-neutral-900 dark:text-gray-100 transition-colors">
@@ -23,6 +29,7 @@ export default function LoginPage() {
     );
   }
 
+  // Render login form in centered layout
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 dark:bg-neutral-900 text-neutral-900">
       <div className="w-full max-w-sm">

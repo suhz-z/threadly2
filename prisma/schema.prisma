@@ -1,47 +1,48 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+//  Database schema definition using Prisma ORM
+// Defines the data models for the Threadly social media application
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Prisma client generator configuration
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js" // Generates TypeScript client for database operations
 }
 
+// Database connection configuration
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql" // Using PostgreSQL database
+  url      = env("DATABASE_URL") // Main connection URL from environment
+  directUrl = env("DIRECT_URL") // Direct connection URL for migrations
 }
 
-
+// User model - represents registered users in the system
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  password  String
-  posts     Post[]
-  comments  Comment[]
+  id        String   @id @default(cuid()) // Unique CUID identifier
+  name      String? // Optional display name
+  email     String   @unique // Unique email address for authentication
+  password  String // Hashed password for security
+  posts     Post[] // One-to-many relationship with posts
+  comments  Comment[] // One-to-many relationship with comments
 }
 
+// Post model - represents user posts in the feed
 model Post {
-  id        String    @id @default(cuid())
-  content   String
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String
-  createdAt DateTime  @default(now())
-  comments  Comment[]
+  id        String    @id @default(cuid()) // Unique CUID identifier
+  content   String // Text content of the post
+  author    User      @relation(fields: [authorId], references: [id]) // Foreign key to User
+  authorId  String // Author user ID
+  createdAt DateTime  @default(now()) // Auto-generated timestamp
+  comments  Comment[] // One-to-many relationship with comments
 }
 
+// Comment model - represents comments on posts (supports nested replies)
 model Comment {
-  id         String    @id @default(cuid())
-  content    String
-  author     User      @relation(fields: [authorId], references: [id])
-  authorId   String
-  post       Post      @relation(fields: [postId], references: [id])
-  postId     String
-  parentId   String?   // null for top-level comment
-  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies    Comment[] @relation("CommentReplies")
-  createdAt  DateTime  @default(now())
+  id         String    @id @default(cuid()) // Unique CUID identifier
+  content    String // Text content of the comment
+  author     User      @relation(fields: [authorId], references: [id]) // Foreign key to User
+  authorId   String // Comment author user ID
+  post       Post      @relation(fields: [postId], references: [id]) // Foreign key to Post
+  postId     String // Post this comment belongs to
+  parentId   String?   // Parent comment ID (null for top-level comments)
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id]) // Self-referencing for replies
+  replies    Comment[] @relation("CommentReplies") // Nested replies
+  createdAt  DateTime  @default(now()) // Auto-generated timestamp
 }
