@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getCommentsRecursive } from "../route"; // reuse from /api/posts/route.ts
+import { getCommentsRecursive } from "../route"; 
 
 const prisma = new PrismaClient();
 
-// ✅ This is REQUIRED — Next.js only recognizes named exports
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } } 
 ) {
+  const id = params.id;
+
   try {
     const post = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { author: true },
     });
 
@@ -19,8 +20,7 @@ export async function GET(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // Fetch comments for this post using the recursive helper
-    const comments = await getCommentsRecursive(post.id);
+    const comments = await getCommentsRecursive(id);
 
     return NextResponse.json({
       id: post.id,
@@ -31,9 +31,6 @@ export async function GET(
     });
   } catch (err) {
     console.error("Error fetching post:", err);
-    return NextResponse.json(
-      { error: "Failed to fetch post" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch post" }, { status: 500 });
   }
 }
