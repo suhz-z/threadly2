@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getCommentsRecursive } from "../../route";// reuse your function from api/posts/route.ts
+import { getCommentsRecursive } from "../../route";
 
 const prisma = new PrismaClient();
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } 
 ) {
+  const { id } = await context.params; 
   try {
     const post = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { author: true },
     });
 
@@ -18,7 +19,7 @@ export async function GET(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    const comments = await getCommentsRecursive(post.id);
+    const comments = await getCommentsRecursive(id);
 
     return NextResponse.json({
       id: post.id,
