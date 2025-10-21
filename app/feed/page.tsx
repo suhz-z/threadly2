@@ -14,7 +14,7 @@ import { useSession, signOut } from "next-auth/react";
 import { redirect, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
-
+import { Skeleton } from "@/components/ui/skeleton"; 
 
 export default function FeedPage() {
   // State for managing posts and new post input
@@ -24,6 +24,8 @@ export default function FeedPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false)
+  
 
   // Redirect to login if not authenticated (server-side)
   if (!session) {
@@ -32,10 +34,23 @@ export default function FeedPage() {
 
   // Function to fetch all posts from the API
   const fetchPosts = async () => {
+  setLoading(true);
+  try {
     const res = await fetch("/api/posts");
     const data: Post[] = await res.json();
     setPosts(data);
-  };
+  } catch (err) {
+    console.error("Failed to load posts:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
+
+
 
   // Load posts on component mount
   useEffect(() => {
@@ -73,6 +88,14 @@ export default function FeedPage() {
     redirect('/login');
   };
 
+//   if (loading) {
+//   return (
+//     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-neutral-900 text-neutral-900 dark:text-gray-100 transition-colors">
+//         <Loader2 className="w-10 h-10 animate-spin text-gray-700 dark:text-gray-200" />
+//       </div>
+//   );
+// }
+
 
 
   // Main layout with sidebar and feed content
@@ -103,13 +126,13 @@ export default function FeedPage() {
 
         {/* Logout button - only shown if user is logged in */}
         {session && (
-        <Button
-          variant="ghost"
-          className="mt-4 text-red-500 hover:text-red-600"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-6 h-6" />
-        </Button>
+          <Button
+            variant="ghost"
+            className="mt-4 text-red-500 hover:text-red-600"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-6 h-6" />
+          </Button>
         )}
       </aside>
 
@@ -119,7 +142,7 @@ export default function FeedPage() {
           {/* New Post Form - allows users to create posts */}
           <div className="flex w-full justify-center mb-6">
             <div className="flex w-full max-w-md gap-2 items-center">
-                {session?.user?.name && <span>{session.user.name}:</span>}
+              {session?.user?.name && <span>{session.user.name}:</span>}
               <Input
                 placeholder="What's on your mind?"
                 value={newPost}
@@ -127,16 +150,30 @@ export default function FeedPage() {
                 className="flex-1"
               />
               <Button onClick={submitPost}>Post</Button>
-
             </div>
-
           </div>
 
           {/* Posts Feed - displays all posts with comments */}
           <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
+            {loading ? (
+              // 🔹 Skeleton loader while posts load
+              <div className="space-y-6 p-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="space-y-3 gap-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />{" "}
+                      
+                      <Skeleton className="h-4 w-1/3" /> 
+                    </div>
+                    <Skeleton className="h-6 w-3/4" /> 
+                    <Skeleton className="h-4 w-1/2" />
+                    
+                  </div>
+                ))}
+              </div>
+            ) : (
+              posts.map((post) => <PostCard key={post.id} post={post} />)
+            )}
           </div>
         </Card>
       </main>

@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Post, Comment } from "@/types/types";
 import { useSession } from "next-auth/react";
+import { Skeleton } from "../ui/skeleton";
 
 // Utility function to format timestamps as relative time
 function timeAgo(timestamp: string | Date) {
@@ -41,6 +42,7 @@ export function PostCard({ post }: PostCardProps) {
   const [commentsVisible, setCommentsVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
+  
 
   // Recursively insert a new reply into the comment tree
   const insertReply = (list: Comment[], parentId: string, newComment: Comment): Comment[] =>
@@ -213,13 +215,13 @@ export function PostCard({ post }: PostCardProps) {
       <div className="max-w-200 w-full border-b border-neutral-200 dark:border-neutral-700 p-4 bg-white dark:bg-transparent">
         {/* Post Header */}
         <div className="mb-3 flex justify-between items-center">
-          <div>
+          <div className="w-full flex items-center justify-between">
             <p className="font-semibold">{post.author?.name || "Unknown"}</p>
             <span className="text-xs text-neutral-500">{timeAgo(post.createdAt)}</span>
           </div>
         </div>
 
-        <p className="text-neutral-800 dark:text-neutral-300 mt-1">{post.content}</p>
+        <p className="text-neutral-800 text-2xl dark:text-neutral-300 mt-1">{post.content}</p>
 
         {/* Top-level comment input */}
         <div className="flex gap-2 mt-3 mb-3">
