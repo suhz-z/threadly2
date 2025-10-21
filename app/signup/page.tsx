@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { SignupForm } from "@/components/signup-form";
 
 export default function SignupPage() {
