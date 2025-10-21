@@ -16,6 +16,7 @@ import {
 import { Post, Comment } from "@/types/types";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "../ui/skeleton";
+import { useRouter } from "next/navigation";
 
 // Utility function to format timestamps as relative time
 function timeAgo(timestamp: string | Date) {
@@ -35,17 +36,27 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   // State management for comment interactions
-  const [replyContents, setReplyContents] = useState<Record<string, string>>({});
-  const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>({});
+  const [replyContents, setReplyContents] = useState<Record<string, string>>(
+    {}
+  );
+  const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>(
+    {}
+  );
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
-  const [collapsedComments, setCollapsedComments] = useState<Record<string, boolean>>({});
+  const [collapsedComments, setCollapsedComments] = useState<
+    Record<string, boolean>
+  >({});
   const [commentsVisible, setCommentsVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
-  
+  const router = useRouter();
 
   // Recursively insert a new reply into the comment tree
-  const insertReply = (list: Comment[], parentId: string, newComment: Comment): Comment[] =>
+  const insertReply = (
+    list: Comment[],
+    parentId: string,
+    newComment: Comment
+  ): Comment[] =>
     list.map((c) => {
       if (c.id === parentId) {
         return { ...c, replies: [...(c.replies || []), newComment] };
@@ -148,7 +159,9 @@ export function PostCard({ post }: PostCardProps) {
             <div>
               <p className="flex items-center gap-2">
                 <strong>{c.author?.name || "Unknown"}</strong>
-                <span className="text-xs text-neutral-500">{timeAgo(c.createdAt)}</span>
+                <span className="text-xs text-neutral-500">
+                  {timeAgo(c.createdAt)}
+                </span>
               </p>
               <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">
                 {c.content}
@@ -158,7 +171,10 @@ export function PostCard({ post }: PostCardProps) {
             <div className="flex items-center gap-2">
               {c.replies && c.replies.length > 0 && (
                 <button
-                  onClick={() => toggleCommentCollapse(c.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCommentCollapse(c.id);
+                  }}
                   className="text-neutral-500 hover:text-neutral-700 dark:hover:text-white"
                 >
                   {collapsedComments[c.id] ? (
@@ -172,7 +188,10 @@ export function PostCard({ post }: PostCardProps) {
               {/*  Show only for owner */}
               {isOwner && (
                 <button
-                  onClick={() => handleDeleteComment(c.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteComment(c.id);
+                  }}
                   className="text-gray-500 hover:text-red-500"
                   title="Delete comment"
                 >
@@ -184,7 +203,10 @@ export function PostCard({ post }: PostCardProps) {
 
           <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
             <button
-              onClick={() => toggleReplyInput(c.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleReplyInput(c.id);
+              }}
               className="flex items-center gap-1 hover:text-neutral-800 dark:hover:text-white"
             >
               <Reply size={12} /> Reply
@@ -199,7 +221,11 @@ export function PostCard({ post }: PostCardProps) {
                 onChange={(e) => handleChange(c.id, e.target.value)}
                 className="flex-1 text-sm"
               />
-              <Button size="sm" disabled={isSubmitting} onClick={() => submitComment(c.id)}>
+              <Button
+                size="sm"
+                disabled={isSubmitting}
+                onClick={() => submitComment(c.id)}
+              >
                 {isSubmitting ? "..." : "Send"}
               </Button>
             </div>
@@ -217,11 +243,18 @@ export function PostCard({ post }: PostCardProps) {
         <div className="mb-3 flex justify-between items-center">
           <div className="w-full flex items-center justify-between">
             <p className="font-semibold">{post.author?.name || "Unknown"}</p>
-            <span className="text-xs text-neutral-500">{timeAgo(post.createdAt)}</span>
+            <span className="text-xs text-neutral-500">
+              {timeAgo(post.createdAt)}
+            </span>
           </div>
         </div>
 
-        <p className="text-neutral-800 text-2xl dark:text-neutral-300 mt-1">{post.content}</p>
+        <p
+          className="cursor-pointer text-neutral-800 text-2xl dark:text-neutral-300 mt-1"
+          onClick={() => router.push(`/posts/${post.id}`)}
+        >
+          {post.content}
+        </p>
 
         {/* Top-level comment input */}
         <div className="flex gap-2 mt-3 mb-3">
@@ -231,7 +264,11 @@ export function PostCard({ post }: PostCardProps) {
             onChange={(e) => handleChange("root", e.target.value)}
             className="flex-1 text-sm"
           />
-          <Button size="sm" disabled={isSubmitting} onClick={() => submitComment()}>
+          <Button
+            size="sm"
+            disabled={isSubmitting}
+            onClick={() => submitComment()}
+          >
             {isSubmitting ? "..." : "Send"}
           </Button>
         </div>
