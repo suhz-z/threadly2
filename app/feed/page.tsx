@@ -35,6 +35,8 @@ export default function FeedPage() {
   useEffect(() => {
     fetchPosts();
   }, []);
+
+  
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
@@ -107,7 +109,7 @@ export default function FeedPage() {
           {/* New Post Form */}
           <div className="flex w-full justify-center mb-6">
             <div className="flex w-full max-w-md gap-2 items-center">
-               {session?.user?.name} { ':'}
+                {session?.user?.name && <span>{session.user.name}:</span>}
               <Input
                 placeholder="What's on your mind?"
                 value={newPost}
