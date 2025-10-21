@@ -1,6 +1,6 @@
 "use client"
 import { LoginForm } from "@/components/login-form"
-import { Loader2, Loader2Icon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
