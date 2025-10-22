@@ -23,4 +23,5 @@ export interface Post {
   createdAt: string; 
   author?: { name?: string }; 
   comments?: Comment[]; 
+  commentCount?: number;
 }

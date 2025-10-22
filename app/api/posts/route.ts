@@ -8,59 +8,61 @@ import { authOptions } from "../auth/[...nextauth]/route";
 
 const prisma = new PrismaClient();
 
-import { Comment,Post } from "@/types/types";
-
+import { Comment, Post } from "@/types/types";
 
 // Recursive function to fetch comments and their nested replies
-export async function getCommentsRecursive(
-  postId: string,
-  parentId: string | null = null
-): Promise<Comment[]> {
-  // Fetch comments for the given post and parent (null for top-level)
-  const comments = await prisma.comment.findMany({
-    where: { postId, parentId },
-    include: { author: true },
-    orderBy: { createdAt: "asc" },
-  });
+// export async function getCommentsRecursive(
+//   postId: string,
+//   parentId: string | null = null
+// ): Promise<Comment[]> {
+//   // Fetch comments for the given post and parent (null for top-level)
+//   const comments = await prisma.comment.findMany({
+//     where: { postId, parentId },
+//     include: { author: true },
+//     orderBy: { createdAt: "asc" },
+//   });
 
-  // Recursively build comment tree with replies
-  return Promise.all(
-    comments.map(async (c) => ({
-      id: c.id,
-      content: c.content,
-      createdAt: c.createdAt.toISOString(),
-      author: { name: c.author?.name ?? undefined }, // Convert null to undefined
-      replies: await getCommentsRecursive(postId, c.id), // Fetch nested replies
-    }))
-  );
-}
+//   // Recursively build comment tree with replies
+//   return Promise.all(
+//     comments.map(async (c) => ({
+//       id: c.id,
+//       content: c.content,
+//       createdAt: c.createdAt.toISOString(),
+//       author: { name: c.author?.name ?? undefined }, // Convert null to undefined
+//       replies: await getCommentsRecursive(postId, c.id), // Fetch nested replies
+//     }))
+//   );
+// }
 
+// fetch all posts
 
-
-// fetch all posts with their comments
 export async function GET() {
   try {
-    // Fetch posts from database with author info, ordered by newest first
-    const postsRaw = await prisma.post.findMany({
-      include: { author: true },
+    const posts = await prisma.post.findMany({
+      include: {
+        author: true,
+        _count: {
+          select: { comments: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
-    // Transform posts and fetch nested comments for each
-    const posts: Post[] = await Promise.all(
-      postsRaw.map(async (p) => ({
+    return NextResponse.json(
+      posts.map((p) => ({
         id: p.id,
         content: p.content,
         createdAt: p.createdAt.toISOString(),
         author: { name: p.author?.name ?? undefined },
-        comments: await getCommentsRecursive(p.id), // Fetch full comment tree
+        commentCount: p._count.comments,
       }))
     );
-
-    return NextResponse.json(posts);
   } catch (err) {
     console.error("Error fetching posts:", err);
-    return NextResponse.json({ error: "Failed to load posts" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to load posts" },
+      { status: 500 }
+    );
   }
 }
 
@@ -72,10 +74,7 @@ export async function POST(req: Request) {
 
     // Check if user is authenticated
     if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Parse post content from request
@@ -83,10 +82,7 @@ export async function POST(req: Request) {
 
     // Validate content is provided
     if (!content) {
-      return NextResponse.json(
-        { error: "Missing content" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing content" }, { status: 400 });
     }
 
     // Create new post in database, linking to authenticated user

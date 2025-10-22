@@ -7,6 +7,7 @@ import { PostCard } from "@/components/feed/postcard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export default function ThreadPage() {
   const { id } = useParams(); // /posts/[id]
@@ -88,9 +89,13 @@ export default function ThreadPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Feed
           </Button>
         </div>
+        <main className="flex flex-col items-center flex-1 py-8 min-h-screen">
+        <Card className="w-full max-w-2xl p-6 shadow-sm dark:shadow-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-2xl bg-white dark:bg-neutral-900 transition-shadow hover:shadow-md">
 
         {/* Post + Comments */}
         <PostCard post={post} />
+        </Card>
+        </main>
       </div>
     </div>
   );

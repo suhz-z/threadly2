@@ -1,35 +1,51 @@
+// app/api/posts/[id]/comments/route.ts
+import { Comment } from "@/types/types";
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getCommentsRecursive } from "../../route";
 
 const prisma = new PrismaClient();
 
+
+
+
+
+// ✅ Explicitly define the return type
+export async function getCommentsRecursive(
+  postId: string,
+  parentId: string | null = null
+): Promise<Comment[]> {
+  const comments = await prisma.comment.findMany({
+    where: { postId, parentId },
+    include: { author: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  // ✅ TypeScript can now infer this safely
+  const nestedComments: Comment[] = await Promise.all(
+    comments.map(async (c) => ({
+      id: c.id,
+      content: c.content,
+      createdAt: c.createdAt.toISOString(),
+      author: { name: c.author?.name ?? undefined },
+      replies: await getCommentsRecursive(postId, c.id), // recursion
+    }))
+  );
+
+  return nestedComments;
+}
+
+
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; 
+  const { id } = await context.params;
+
   try {
-    const post = await prisma.post.findUnique({
-      where: { id },
-      include: { author: true },
-    });
-
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
-
     const comments = await getCommentsRecursive(id);
-
-    return NextResponse.json({
-      id: post.id,
-      content: post.content,
-      createdAt: post.createdAt.toISOString(),
-      author: { name: post.author?.name ?? undefined },
-      comments,
-    });
+    return NextResponse.json(comments);
   } catch (err) {
-    console.error("Error fetching post:", err);
-    return NextResponse.json({ error: "Failed to fetch post" }, { status: 500 });
+    console.error("Error fetching comments:", err);
+    return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 });
   }
 }

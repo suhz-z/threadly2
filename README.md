@@ -149,3 +149,9 @@ Threadly uses NextAuth.js for authentication with a credentials provider:
 ## Deployment
 
 The application can be deployed on Vercel or any platform supporting Next.js applications. Ensure environment variables are configured in your deployment platform.
+
+
+
+//add all comment count ( make sure its not zero when page opens)
+//single post loads all commnets initially
+//ui updates for single post page

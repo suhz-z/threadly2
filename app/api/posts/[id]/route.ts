@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getCommentsRecursive } from "../route"; 
+import { getCommentsRecursive } from "./comments/route";
 
 const prisma = new PrismaClient();
 
@@ -13,7 +13,13 @@ export async function GET(
   try {
     const post = await prisma.post.findUnique({
       where: { id },
-      include: { author: true },
+      include: {
+        author: true,
+        comments: {
+          include: { author: true, replies: true },
+        },
+        _count: { select: { comments: true } }, 
+      },
     });
 
     if (!post) {
@@ -27,6 +33,7 @@ export async function GET(
       content: post.content,
       createdAt: post.createdAt.toISOString(),
       author: { name: post.author?.name ?? undefined },
+      commentCount: post._count.comments,
       comments,
     });
   } catch (err) {

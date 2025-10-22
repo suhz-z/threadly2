@@ -1,24 +1,21 @@
-//  Post card component with comments
-// Displays individual posts with nested commenting functionality
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   MessageSquare,
   ChevronDown,
-  ChevronRight,
   Reply,
   Trash2,
+  Loader2,
+  ChevronLeft,
 } from "lucide-react";
 import { Post, Comment } from "@/types/types";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "../ui/skeleton";
 import { useRouter } from "next/navigation";
 
-// Utility function to format timestamps as relative time
 function timeAgo(timestamp: string | Date) {
   const now = new Date();
   const time = new Date(timestamp);
@@ -35,80 +32,70 @@ interface PostCardProps {
 }
 
 export function PostCard({ post }: PostCardProps) {
-  // State management for comment interactions
-  const [replyContents, setReplyContents] = useState<Record<string, string>>(
-    {}
-  );
-  const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [comments, setComments] = useState<Comment[]>(post.comments || []);
-  const [collapsedComments, setCollapsedComments] = useState<
-    Record<string, boolean>
-  >({});
-  const [commentsVisible, setCommentsVisible] = useState(true);
+  const [replyContents, setReplyContents] = useState<Record<string, string>>({});
+  const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>({});
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [collapsedComments, setCollapsedComments] = useState<Record<string, boolean>>({});
+  const [commentsVisible, setCommentsVisible] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Recursively insert a new reply into the comment tree
-  const insertReply = (
-    list: Comment[],
-    parentId: string,
-    newComment: Comment
-  ): Comment[] =>
-    list.map((c) => {
-      if (c.id === parentId) {
-        return { ...c, replies: [...(c.replies || []), newComment] };
-      }
-      if (c.replies && c.replies.length > 0) {
-        return { ...c, replies: insertReply(c.replies, parentId, newComment) };
-      }
-      return c;
-    });
+  // Recursive helpers
+  const insertReply = (list: Comment[], parentId: string, newComment: Comment): Comment[] =>
+    list.map((c) =>
+      c.id === parentId
+        ? { ...c, replies: [...(c.replies || []), newComment] }
+        : { ...c, replies: insertReply(c.replies || [], parentId, newComment) }
+    );
 
-  // Recursively delete a comment from the comment tree
   const deleteCommentFromList = (list: Comment[], id: string): Comment[] =>
     list
       .filter((c) => c.id !== id)
-      .map((c) => ({
-        ...c,
-        replies: c.replies ? deleteCommentFromList(c.replies, id) : [],
-      }));
+      .map((c) => ({ ...c, replies: deleteCommentFromList(c.replies || [], id) }));
 
-  // Handle comment deletion with confirmation
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("Delete this comment?")) return;
-
     try {
-      const res = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        console.error("Failed to delete comment");
-        return;
-      }
-
+      const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
       setComments((prev) => deleteCommentFromList(prev, commentId));
     } catch (err) {
       console.error(err);
     }
   };
 
-  const toggleReplyInput = (id: string) => {
+  const toggleReplyInput = (id: string) =>
     setShowReplyInput((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
-  const handleChange = (id: string, value: string) => {
+  const handleChange = (id: string, value: string) =>
     setReplyContents((prev) => ({ ...prev, [id]: value }));
-  };
 
-  const toggleCommentCollapse = (id: string) => {
+  const toggleCommentCollapse = (id: string) =>
     setCollapsedComments((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  // Lazy-load comments when toggled open
+  const toggleCommentsVisibility = async () => {
+    if (!commentsVisible) {
+      setLoadingComments(true);
+      try {
+        const res = await fetch(`/api/posts/${post.id}/comments`);
+        if (!res.ok) throw new Error("Failed to fetch comments");
+        const data: Comment[] = await res.json();
+        setComments(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingComments(false);
+      }
+    }
+    setCommentsVisible((prev) => !prev);
   };
 
-  // Submit a new comment or reply to the API
+ 
+
+
   const submitComment = async (parentId?: string) => {
     const content = replyContents[parentId || "root"];
     if (!content || !session?.user?.email) return;
@@ -126,14 +113,12 @@ export function PostCard({ post }: PostCardProps) {
         }),
       });
 
-      if (!res.ok) return;
+      if (!res.ok) throw new Error("Failed to post comment");
+      const newComment: Comment = await res.json();
 
-      const data: Comment = await res.json();
-      // Add to local state: prepend for root comments, insert for replies
-      if (parentId) setComments((prev) => insertReply(prev, parentId, data));
-      else setComments((prev) => [data, ...prev]);
+      if (parentId) setComments((prev) => insertReply(prev, parentId, newComment));
+      else setComments((prev) => [newComment, ...prev]);
 
-      // Clear input and hide reply form
       setReplyContents((prev) => ({ ...prev, [parentId || "root"]: "" }));
       setShowReplyInput((prev) => ({ ...prev, [parentId || "root"]: false }));
     } catch (err) {
@@ -141,10 +126,6 @@ export function PostCard({ post }: PostCardProps) {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const toggleCommentsVisibility = () => {
-    setCommentsVisible((prev) => !prev);
   };
 
   const renderReplies = (replies: Comment[]) =>
@@ -159,54 +140,39 @@ export function PostCard({ post }: PostCardProps) {
             <div>
               <p className="flex items-center gap-2">
                 <strong>{c.author?.name || "Unknown"}</strong>
-                <span className="text-xs text-neutral-500">
-                  {timeAgo(c.createdAt)}
-                </span>
+                <span className="text-xs text-neutral-500">{timeAgo(c.createdAt)}</span>
               </p>
               <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">
                 {c.content}
               </p>
             </div>
-
             <div className="flex items-center gap-2">
-              {c.replies && c.replies.length > 0 && (
+              {c.replies?.length! > 0 && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleCommentCollapse(c.id);
-                  }}
+                  onClick={() => toggleCommentCollapse(c.id)}
                   className="text-neutral-500 hover:text-neutral-700 dark:hover:text-white"
                 >
                   {collapsedComments[c.id] ? (
-                    <ChevronRight size={14} />
+                    <ChevronLeft size={14} />
                   ) : (
                     <ChevronDown size={14} />
                   )}
                 </button>
               )}
-
-              {/*  Show only for owner */}
               {isOwner && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteComment(c.id);
-                  }}
-                  className="text-gray-500 hover:text-red-500"
-                  title="Delete comment"
+                <Button
+                  onClick={() => handleDeleteComment(c.id)}
+                  className="bg-transparent hover:bg-transparent text-gray-500 hover:text-red-500"
                 >
                   <Trash2 size={14} />
-                </button>
+                </Button>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleReplyInput(c.id);
-              }}
+              onClick={() => toggleReplyInput(c.id)}
               className="flex items-center gap-1 hover:text-neutral-800 dark:hover:text-white"
             >
               <Reply size={12} /> Reply
@@ -221,11 +187,7 @@ export function PostCard({ post }: PostCardProps) {
                 onChange={(e) => handleChange(c.id, e.target.value)}
                 className="flex-1 text-sm"
               />
-              <Button
-                size="sm"
-                disabled={isSubmitting}
-                onClick={() => submitComment(c.id)}
-              >
+              <Button size="sm" disabled={isSubmitting} onClick={() => submitComment(c.id)}>
                 {isSubmitting ? "..." : "Send"}
               </Button>
             </div>
@@ -237,16 +199,12 @@ export function PostCard({ post }: PostCardProps) {
     });
 
   return (
-    <div className="w-full flex justify-center ">
+    <div className="w-full flex justify-center">
       <div className="max-w-200 w-full border-b border-neutral-200 dark:border-neutral-700 p-4 bg-white dark:bg-transparent">
-        {/* Post Header */}
+        {/* Post header */}
         <div className="mb-3 flex justify-between items-center">
-          <div className="w-full flex items-center justify-between">
-            <p className="font-semibold">{post.author?.name || "Unknown"}</p>
-            <span className="text-xs text-neutral-500">
-              {timeAgo(post.createdAt)}
-            </span>
-          </div>
+          <p className="font-semibold">{post.author?.name || "Unknown"}</p>
+          <span className="text-xs text-neutral-500">{timeAgo(post.createdAt)}</span>
         </div>
 
         <p
@@ -264,31 +222,40 @@ export function PostCard({ post }: PostCardProps) {
             onChange={(e) => handleChange("root", e.target.value)}
             className="flex-1 text-sm"
           />
-          <Button
-            size="sm"
-            disabled={isSubmitting}
-            onClick={() => submitComment()}
-          >
+          <Button size="sm" disabled={isSubmitting} onClick={() => submitComment()}>
             {isSubmitting ? "..." : "Send"}
           </Button>
         </div>
 
-        {/* Comments Header */}
+        {/* Comments header */}
         <div className="flex items-center gap-2 mb-2 text-sm text-neutral-500">
           <Button
             variant="ghost"
             size="icon"
             className="text-neutral-500 hover:text-neutral-800 dark:hover:text-white"
             onClick={toggleCommentsVisibility}
+            disabled={loadingComments}
           >
-            <MessageSquare size={14} />
+            {loadingComments ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
           </Button>
-          {comments.length} Comments
+          {post.commentCount ?? comments.length} Comments
         </div>
 
-        {/* Comments Section */}
-        {commentsVisible && comments.length > 0 && (
-          <div className="mt-2">{renderReplies(comments)}</div>
+        {/* Comments */}
+        {commentsVisible && (
+          <div className="mt-2">
+            {loadingComments ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-6 w-3/4" />
+                ))}
+              </div>
+            ) : comments.length > 0 ? (
+              renderReplies(comments)
+            ) : (
+              <p className="text-sm text-neutral-500">No comments yet.</p>
+            )}
+          </div>
         )}
       </div>
     </div>
