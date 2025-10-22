@@ -1,5 +1,3 @@
-//  User login form component
-// Handles user authentication with NextAuth credentials provider
 
 "use client";
 
@@ -24,31 +22,35 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
-  // Form state management
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
-  // Form submission handler using NextAuth signIn
+  // form state
+  
+  const [email, setEmail] = useState("");           // User's email input
+  const [password, setPassword] = useState("");    // User's password input
+  const [error, setError] = useState("");          // Error message to display
+  const [isLoading, setIsLoading] = useState(false); // Loading state during login
+  const router = useRouter();                      // For navigation after login
+
+
+  // This function runs when user submits the email/password form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Attempt login with credentials provider
+    // Try to sign in with email and password
     const res = await signIn("credentials", {
-      redirect: false,
+      redirect: false,  // Don't redirect automatically
       email,
       password,
     });
 
     if (res?.error) {
+    
       setError("Invalid email or password");
       setIsLoading(false);
     } else {
-      // Redirect to feed page on successful login
+    
       router.replace("/feed");
     }
   };
@@ -98,6 +100,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
+               
                 <Button
                   variant="outline"
                   type="button"

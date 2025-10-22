@@ -1,5 +1,6 @@
-// Main feed page displaying posts and allowing new post creation
-// Features sidebar navigation, theme toggle, and real-time post/comment updates
+
+// This is the main page users see after logging in
+// Features: Create posts, view all posts, comment system, sidebar navigation
 
 "use client";
 
@@ -18,17 +19,24 @@ import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton"; 
 
 export default function FeedPage() {
-  // State for managing posts and new post input
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [newPost, setNewPost] = useState("");
-  const { data: session ,status } = useSession();
-  const router = useRouter();
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(false)
-  
 
-  // Client-side guard: redirect unauthenticated users (avoid during render)
+  // state management
+
+  const [posts, setPosts] = useState<Post[]>([]);        // All posts from database
+  const [newPost, setNewPost] = useState("");           // Text for new post being typed
+  const [loading, setLoading] = useState(false);        // Loading state for posts
+  const [mounted, setMounted] = useState(false);         // Prevent hydration issues
+  
+ 
+  // authentication and navigation
+ 
+  const { data: session, status } = useSession();       // Get current user info
+  const router = useRouter();                          // For page navigation
+  const { theme, setTheme } = useTheme();               // Dark/light mode toggle
+
+  
+ 
+  // If user is not logged in, redirect them to login page
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login");
