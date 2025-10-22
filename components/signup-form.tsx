@@ -1,3 +1,4 @@
+import { signIn } from "next-auth/react";
 // User registration form component
 // Handles user signup with validation and API integration
 
@@ -134,7 +135,12 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
-                <Button variant="outline" type="button" disabled={isLoading}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => signIn("google", { callbackUrl: "/feed" })}
+                  disabled={isLoading}
+                >
                   Sign up with Google
                 </Button>
                 <FieldDescription className="px-6 text-center">

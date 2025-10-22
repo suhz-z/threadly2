@@ -1,9 +1,9 @@
 // app/api/posts/[id]/comments/route.ts
 import { Comment } from "@/types/types";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+ 
 
 
 

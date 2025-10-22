@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Post } from "@/types/types";
 import { Card } from "@/components/ui/card";
-import { Home, Loader2, LogOut } from "lucide-react";
+ 
+import Sidebar from "@/components/sidebar/sidebar";
 import { useSession, signOut } from "next-auth/react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
+ 
 import { Skeleton } from "@/components/ui/skeleton"; 
 
 export default function FeedPage() {
@@ -27,10 +28,12 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(false)
   
 
-  // Redirect to login if not authenticated (server-side)
-  if (!session) {
-    redirect("/login");
-  }
+  // Client-side guard: redirect unauthenticated users (avoid during render)
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   // Function to fetch all posts from the API
   const fetchPosts = async () => {
@@ -84,8 +87,8 @@ export default function FeedPage() {
 
   // Handle user logout
   const handleLogout = async () => {
-    await signOut({ redirect: true })
-    redirect('/login');
+    await signOut({ redirect: false });
+    router.replace('/login');
   };
 
 //   if (loading) {
@@ -101,40 +104,13 @@ export default function FeedPage() {
   // Main layout with sidebar and feed content
   return (
     <div className="flex min-h-screen bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
-      {/* Fixed sidebar with navigation and controls */}
-      <aside className="fixed left-0 top-0 h-full w-20 flex flex-col items-center py-8 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 z-20">
-        {/* Home Button - navigates to main page */}
-        <Button
-          variant="ghost"
-          className="mb-6 mt-2"
-          onClick={handleLoginOrFeed}
-        >
-          <Home className="w-6 h-6" />
-        </Button>
-
-        {/* Spacer to push theme toggle and logout to bottom */}
-        <div className="flex-1" />
-
-        {/* Theme Toggle Button */}
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-        </Button>
-
-        {/* Logout button - only shown if user is logged in */}
-        {session && (
-          <Button
-            variant="ghost"
-            className="mt-4 text-red-500 hover:text-red-600"
-            onClick={handleLogout}
-          >
-            <LogOut className="w-6 h-6" />
-          </Button>
-        )}
-      </aside>
+      <Sidebar
+        onHomeClick={handleLoginOrFeed}
+        onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+        isDark={theme === "dark"}
+        showLogout={Boolean(session)}
+        onLogout={handleLogout}
+      />
 
       {/* Main feed content area */}
       <main className="flex flex-col items-center flex-1 py-8 min-h-screen">

@@ -3,32 +3,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  MessageSquare,
-  ChevronDown,
-  Reply,
-  Trash2,
-  Loader2,
-  ChevronLeft,
-} from "lucide-react";
+import { MessageSquare, Loader2 } from "lucide-react";
 import { Post, Comment } from "@/types/types";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "../ui/skeleton";
 import { useRouter } from "next/navigation";
+import { timeAgo } from "@/lib/time";
+import CommentThread from "@/components/comments/comment-thread";
 
-function timeAgo(timestamp: string | Date) {
-  const now = new Date();
-  const time = new Date(timestamp);
-  const diff = Math.floor((now.getTime() - time.getTime()) / 1000);
-  if (diff < 60) return `${diff}s`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-  return time.toLocaleDateString();
-}
+ 
 
 interface PostCardProps {
   post: Post;
+  
 }
 
 export function PostCard({ post }: PostCardProps) {
@@ -128,81 +115,7 @@ export function PostCard({ post }: PostCardProps) {
     }
   };
 
-  const renderReplies = (replies: Comment[]) =>
-    replies.map((c) => {
-      const isOwner = c.author?.name === session?.user?.name;
-      return (
-        <div
-          key={c.id}
-          className="ml-6 mt-3 border-l border-neutral-200 dark:border-neutral-700 pl-3"
-        >
-          <div className="flex items-start justify-between text-sm">
-            <div>
-              <p className="flex items-center gap-2">
-                <strong>{c.author?.name || "Unknown"}</strong>
-                <span className="text-xs text-neutral-500">
-                  {timeAgo(c.createdAt)}
-                </span>
-              </p>
-              <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">
-                {c.content}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {(c.replies?.length ?? 0) > 0 && (
-                <button
-                  onClick={() => toggleCommentCollapse(c.id)}
-                  className="text-neutral-500 hover:text-neutral-700 dark:hover:text-white"
-                >
-                  {collapsedComments[c.id] ? (
-                    <ChevronLeft size={14} />
-                  ) : (
-                    <ChevronDown size={14} />
-                  )}
-                </button>
-              )}
-              {isOwner && (
-                <Button
-                  onClick={() => handleDeleteComment(c.id)}
-                  className="bg-transparent hover:bg-transparent text-gray-500 hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
-            <button
-              onClick={() => toggleReplyInput(c.id)}
-              className="flex items-center gap-1 hover:text-neutral-800 dark:hover:text-white"
-            >
-              <Reply size={12} /> Reply
-            </button>
-          </div>
-
-          {showReplyInput[c.id] && (
-            <div className="flex gap-2 mt-2">
-              <Input
-                placeholder="Write a reply..."
-                value={replyContents[c.id] || ""}
-                onChange={(e) => handleChange(c.id, e.target.value)}
-                className="flex-1 text-sm"
-              />
-              <Button
-                size="sm"
-                disabled={isSubmitting}
-                onClick={() => submitComment(c.id)}
-              >
-                {isSubmitting ? "..." : "Send"}
-              </Button>
-            </div>
-          )}
-
-          {!collapsedComments[c.id] && c.replies && renderReplies(c.replies)}
-        </div>
-      );
-    });
+ 
 
   return (
     <div className="w-full flex justify-center">
@@ -257,7 +170,19 @@ export function PostCard({ post }: PostCardProps) {
                 ))}
               </div>
             ) : comments.length > 0 ? (
-              renderReplies(comments)
+              <CommentThread
+                comments={comments}
+                collapsedComments={collapsedComments}
+                showReplyInput={showReplyInput}
+                replyContents={replyContents}
+                isSubmitting={isSubmitting}
+                currentUserName={session?.user?.name ?? null}
+                onToggleCollapse={toggleCommentCollapse}
+                onToggleReplyInput={toggleReplyInput}
+                onChangeReply={handleChange}
+                onSubmitReply={submitComment}
+                onDeleteComment={handleDeleteComment}
+              />
             ) : (
               <p className="text-sm text-neutral-500">No comments yet.</p>
             )}

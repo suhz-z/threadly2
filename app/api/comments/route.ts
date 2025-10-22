@@ -3,10 +3,13 @@
 
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { createCommentSchema } from "@/lib/validation";
+import { jsonError, jsonOk } from "@/lib/http";
 
-const prisma = new PrismaClient();
+ 
 
 // POST handler for creating new comments
 export async function POST(req: Request) {
@@ -17,54 +20,40 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse comment data from request
-    const { postId, parentId, content, userEmail } = await req.json();
-
-    // Validate required fields
-    if (!content || !postId || !userEmail) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    // Parse and validate comment data
+    const body = await req.json();
+    const parse = createCommentSchema.safeParse(body);
+    if (!parse.success) {
+      const msg = parse.error.issues[0]?.message || "Invalid input";
+      return jsonError(msg, 400);
     }
 
     // Create new comment in database
     const newComment = await prisma.comment.create({
       data: {
-        content,
-        post: { connect: { id: postId } }, // Link to post
-        parent: parentId ? { connect: { id: parentId } } : undefined, // Optional parent for replies
-        author: { connect: { email: userEmail } }, // Link to author
+        content: parse.data.content,
+        post: { connect: { id: parse.data.postId } },
+        parent: parse.data.parentId ? { connect: { id: parse.data.parentId } } : undefined,
+        author: { connect: { email: parse.data.userEmail } },
       },
       include: { author: true }, // Include author info in response
     });
 
-    return NextResponse.json(newComment, { status: 201 });
+    return jsonOk(newComment, { status: 201 });
   } catch (err: unknown) {
     // Handle Prisma-specific errors
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       console.error(" Prisma Known Error:", err.code, err.message, err.meta);
-      return NextResponse.json(
-        { error: `Database error (${err.code})` },
-        { status: 500 }
-      );
+      return jsonError(`Database error (${err.code})`, 500);
     }
 
     if (err instanceof Prisma.PrismaClientValidationError) {
       console.error(" Prisma Validation Error:", err.message);
-      return NextResponse.json(
-        { error: "Invalid data provided to Prisma" },
-        { status: 400 }
-      );
+      return jsonError("Invalid data provided to Prisma", 400);
     }
 
     // Generic error handling
     console.error(" Unknown error in /api/comments:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect(); // Ensure database connection is closed
+    return jsonError("Internal Server Error", 500);
   }
 }

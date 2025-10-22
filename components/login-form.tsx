@@ -101,7 +101,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                 <Button
                   variant="outline"
                   type="button"
-                  onClick={() => signIn("google")}
+                  onClick={() => signIn("google", { callbackUrl: "/feed" })}
                   disabled={isLoading}
                 >
                   Login with Google
