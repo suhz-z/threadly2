@@ -2,13 +2,15 @@
 // Handles GET (fetch all posts with comments) and POST (create new post) operations
 
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { createPostSchema } from "@/lib/validation";
+import { jsonError, jsonOk } from "@/lib/http";
 
-const prisma = new PrismaClient();
+ 
 
-import { Comment, Post } from "@/types/types";
+ 
 
 // Recursive function to fetch comments and their nested replies
 // export async function getCommentsRecursive(
@@ -59,10 +61,7 @@ export async function GET() {
     );
   } catch (err) {
     console.error("Error fetching posts:", err);
-    return NextResponse.json(
-      { error: "Failed to load posts" },
-      { status: 500 }
-    );
+    return jsonError("Failed to load posts", 500);
   }
 }
 
@@ -78,28 +77,25 @@ export async function POST(req: Request) {
     }
 
     // Parse post content from request
-    const { content } = await req.json();
-
-    // Validate content is provided
-    if (!content) {
-      return NextResponse.json({ error: "Missing content" }, { status: 400 });
+    const body = await req.json();
+    const parse = createPostSchema.safeParse(body);
+    if (!parse.success) {
+      const msg = parse.error.issues[0]?.message || "Invalid input";
+      return jsonError(msg, 400);
     }
 
     // Create new post in database, linking to authenticated user
     const post = await prisma.post.create({
       data: {
-        content,
+        content: parse.data.content,
         author: { connect: { email: session.user.email } }, // Connect to user by email
       },
       include: { author: true },
     });
 
-    return NextResponse.json(post, { status: 201 });
+    return jsonOk(post, { status: 201 });
   } catch (err) {
     console.error("Error creating post:", err);
-    return NextResponse.json(
-      { error: "Failed to create post" },
-      { status: 500 }
-    );
+    return jsonError("Failed to create post", 500);
   }
 }

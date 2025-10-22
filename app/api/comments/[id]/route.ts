@@ -4,8 +4,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient()
+import prisma from "@/lib/prisma";
 
 // DELETE handler for removing a specific comment
 export async function DELETE(

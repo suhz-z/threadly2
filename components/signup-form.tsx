@@ -1,5 +1,4 @@
-// User registration form component
-// Handles user signup with validation and API integration
+
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,36 +15,43 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
-  // Form state management
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
-  // Form submission handler with validation and API call
+  const [name, setName] = useState("");                    // User's full name
+  const [email, setEmail] = useState("");                 // User's email address
+  const [password, setPassword] = useState("");            // User's password
+  const [confirmPassword, setConfirmPassword] = useState(""); // Password confirmation
+  const [error, setError] = useState("");                 // Error message to display
+  const [isLoading, setIsLoading] = useState(false);     // Loading state during signup
+  const router = useRouter();                            // For navigation after signup
+
+ 
+  // EMAIL/PASSWORD SIGNUP HANDLER
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Client-side validation
+   //CLIENT SIDE
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setIsLoading(false);
       return;
     }
+    
+    // Check password length
     if (password.length < 6) {
       setError("Password must be at least 6 characters long");
       setIsLoading(false);
       return;
     }
+    
+    // Check email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Invalid email format");
@@ -53,7 +59,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       return;
     }
 
-    // Submit signup data to API
+   
+    // Send signup data to API endpoint
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -61,11 +68,12 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
     });
 
     if (!res.ok) {
+      // Signup failed - show error message
       const data = await res.json();
       setError(data.error || "Something went wrong");
       setIsLoading(false);
     } else {
-      // Redirect to login page on successful signup
+      // Signup successful - go to login page
       router.push("/login");
     }
   };
@@ -134,7 +142,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
-                <Button variant="outline" type="button" disabled={isLoading}>
+             
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => signIn("google", { callbackUrl: "/feed" })}
+                  disabled={isLoading}
+                >
                   Sign up with Google
                 </Button>
                 <FieldDescription className="px-6 text-center">
