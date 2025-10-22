@@ -140,14 +140,16 @@ export function PostCard({ post }: PostCardProps) {
             <div>
               <p className="flex items-center gap-2">
                 <strong>{c.author?.name || "Unknown"}</strong>
-                <span className="text-xs text-neutral-500">{timeAgo(c.createdAt)}</span>
+                <span className="text-xs text-neutral-500">
+                  {timeAgo(c.createdAt)}
+                </span>
               </p>
               <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">
                 {c.content}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {c.replies?.length! > 0 && (
+              {(c.replies?.length ?? 0) > 0 && (
                 <button
                   onClick={() => toggleCommentCollapse(c.id)}
                   className="text-neutral-500 hover:text-neutral-700 dark:hover:text-white"
@@ -187,7 +189,11 @@ export function PostCard({ post }: PostCardProps) {
                 onChange={(e) => handleChange(c.id, e.target.value)}
                 className="flex-1 text-sm"
               />
-              <Button size="sm" disabled={isSubmitting} onClick={() => submitComment(c.id)}>
+              <Button
+                size="sm"
+                disabled={isSubmitting}
+                onClick={() => submitComment(c.id)}
+              >
                 {isSubmitting ? "..." : "Send"}
               </Button>
             </div>
