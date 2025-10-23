@@ -15,6 +15,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Loader } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -139,7 +140,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
             )}
             <FieldGroup>
               <Field>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="cursor-pointer">
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
              
@@ -148,8 +149,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                   type="button"
                   onClick={() => signIn("google", { callbackUrl: "/feed" })}
                   disabled={isLoading}
+                  className="cursor-pointer"
                 >
-                  Sign up with Google
+                  {isLoading ? <Loader className="animate-spin"/> : 'Sign up with Google' }
                 </Button>
                 <FieldDescription className="px-6 text-center">
                   Already have an account? <a href="/login">Sign in</a>

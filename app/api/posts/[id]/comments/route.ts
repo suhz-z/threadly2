@@ -3,13 +3,7 @@ import { Comment } from "@/types/types";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
- 
-
-
-
-
-
-// ✅ Explicitly define the return type
+// recursive function to fetch comments and their nested replies
 export async function getCommentsRecursive(
   postId: string,
   parentId: string | null = null
@@ -20,7 +14,6 @@ export async function getCommentsRecursive(
     orderBy: { createdAt: "asc" },
   });
 
-  // ✅ TypeScript can now infer this safely
   const nestedComments: Comment[] = await Promise.all(
     comments.map(async (c) => ({
       id: c.id,
@@ -34,7 +27,6 @@ export async function getCommentsRecursive(
   return nestedComments;
 }
 
-
 export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -46,6 +38,9 @@ export async function GET(
     return NextResponse.json(comments);
   } catch (err) {
     console.error("Error fetching comments:", err);
-    return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch comments" },
+      { status: 500 }
+    );
   }
 }

@@ -9,17 +9,17 @@ import { timeAgo } from "@/lib/time";
 
 // Props needed to render comment thread
 interface CommentThreadProps {
-  comments: Comment[];                                    // List of comments to display
-  collapsedComments: Record<string, boolean>;            // Which comments are collapsed
-  showReplyInput: Record<string, boolean>;              // Which reply inputs are shown
-  replyContents: Record<string, string>;                // Text content for each reply
-  isSubmitting: boolean;                                // Is currently submitting a reply
-  currentUserName?: string | null;                      // Name of logged in user
-  onToggleCollapse: (id: string) => void;              // Function to collapse/expand
-  onToggleReplyInput: (id: string) => void;            // Function to show/hide reply input
-  onChangeReply: (id: string, value: string) => void; // Function to update reply text
-  onSubmitReply: (parentId: string) => void;           // Function to submit a reply
-  onDeleteComment: (id: string) => void;              // Function to delete a comment
+  comments: Comment[];
+  collapsedComments: Record<string, boolean>;
+  showReplyInput: Record<string, boolean>;
+  replyContents: Record<string, string>;
+  isSubmitting: boolean;
+  currentUserName?: string | null;
+  onToggleCollapse: (id: string) => void;
+  onToggleReplyInput: (id: string) => void;
+  onChangeReply: (id: string, value: string) => void;
+  onSubmitReply: (parentId: string) => void;
+  onDeleteComment: (id: string) => void;
 }
 
 // Main comment thread component
@@ -52,10 +52,14 @@ export function CommentThread({
               <div>
                 <p className="flex items-center gap-2">
                   <strong>{c.author?.name || "Unknown"}</strong>
-                  <span className="text-xs text-neutral-500">{timeAgo(c.createdAt)}</span>
+                  <span className="text-xs text-neutral-500">
+                    {timeAgo(c.createdAt)}
+                  </span>
                 </p>
                 {/* Comment content */}
-                <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">{c.content}</p>
+                <p className="text-sm text-neutral-800 dark:text-neutral-300 mt-1">
+                  {c.content}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {/* Collapse/expand button for comments with replies */}
@@ -63,9 +67,17 @@ export function CommentThread({
                   <button
                     onClick={() => onToggleCollapse(c.id)}
                     className="text-neutral-500 hover:text-neutral-700 dark:hover:text-white"
-                    aria-label={collapsedComments[c.id] ? "Expand replies" : "Collapse replies"}
+                    aria-label={
+                      collapsedComments[c.id]
+                        ? "Expand replies"
+                        : "Collapse replies"
+                    }
                   >
-                    {collapsedComments[c.id] ? <ChevronLeft size={14} /> : <ChevronDown size={14} />}
+                    {collapsedComments[c.id] ? (
+                      <ChevronLeft size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    )}
                   </button>
                 )}
                 {/* Delete button - only show if user owns the comment */}
@@ -100,7 +112,11 @@ export function CommentThread({
                   onChange={(e) => onChangeReply(c.id, e.target.value)}
                   className="flex-1 text-sm"
                 />
-                <Button size="sm" disabled={isSubmitting} onClick={() => onSubmitReply(c.id)}>
+                <Button
+                  size="sm"
+                  disabled={isSubmitting}
+                  onClick={() => onSubmitReply(c.id)}
+                >
                   {isSubmitting ? "..." : "Send"}
                 </Button>
               </div>
@@ -130,5 +146,3 @@ export function CommentThread({
 }
 
 export default CommentThread;
-
-

@@ -116,7 +116,6 @@ export default function FeedPage() {
         onHomeClick={handleLoginOrFeed}
         onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         isDark={theme === "dark"}
-        showLogout={Boolean(session)}
         onLogout={handleLogout}
       />
 

@@ -48,7 +48,7 @@ export default function HomePage() {
 
       <div className="flex gap-4">
         {/* Button text changes based on authentication status */}
-        <Button onClick={handleLoginOrFeed} size="lg">
+        <Button onClick={handleLoginOrFeed} size="lg" className="cursor-pointer">
           {session ? "Go to Feed" : "Login"}
         </Button>
 
@@ -58,7 +58,7 @@ export default function HomePage() {
             variant="outline"
             onClick={handleLogout}
             size="lg"
-            className="flex items-center gap-2"
+            className="cursor-pointer flex items-center gap-2"
           >
             <LogOut size={18} />
             Logout

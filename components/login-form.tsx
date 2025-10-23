@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LoaderIcon } from "lucide-react";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
 
@@ -97,7 +98,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                 />
               </Field>
               <Field>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="cursor-pointer">
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
                
@@ -106,8 +107,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                   type="button"
                   onClick={() => signIn("google", { callbackUrl: "/feed" })}
                   disabled={isLoading}
+                  className="cursor-pointer"
                 >
-                  Login with Google
+                  {isLoading ? <LoaderIcon className="animate-spin" /> : "Login with Google" }
                 </Button>
                 {error && <p className="text-red-500 text-center mt-1">{error}</p>}
                 <FieldDescription className="text-center mt-2">

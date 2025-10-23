@@ -2,13 +2,11 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCommentsRecursive } from "./comments/route";
 
- 
-
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; 
+  const { id } = await context.params;
 
   try {
     const post = await prisma.post.findUnique({
@@ -18,7 +16,7 @@ export async function GET(
         comments: {
           include: { author: true, replies: true },
         },
-        _count: { select: { comments: true } }, 
+        _count: { select: { comments: true } },
       },
     });
 
@@ -38,6 +36,9 @@ export async function GET(
     });
   } catch (err) {
     console.error("Error fetching post:", err);
-    return NextResponse.json({ error: "Failed to fetch post" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch post" },
+      { status: 500 }
+    );
   }
 }

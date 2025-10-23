@@ -14,27 +14,37 @@ import CommentThread from "@/components/comments/comment-thread";
 
 // Props for the post card component
 interface PostCardProps {
-  post: Post;  // The post data to display
+  post: Post; // The post data to display
 }
 
 // Main post card component
 export function PostCard({ post }: PostCardProps) {
   // State for managing comments and replies
-  const [replyContents, setReplyContents] = useState<Record<string, string>>({});  // Text for each reply being typed
-  const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>({});  // Which reply inputs are shown
-  const [comments, setComments] = useState<Comment[]>([]);  // List of comments for this post
-  const [collapsedComments, setCollapsedComments] = useState<Record<string, boolean>>({});  // Which comments are collapsed
-  const [commentsVisible, setCommentsVisible] = useState(false);  // Whether comments section is open
-  const [loadingComments, setLoadingComments] = useState(false);  // Loading state for comments
-  const [isSubmitting, setIsSubmitting] = useState(false);  // Loading state for submitting replies
-  
+  const [replyContents, setReplyContents] = useState<Record<string, string>>(
+    {}
+  );
+  const [showReplyInput, setShowReplyInput] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [collapsedComments, setCollapsedComments] = useState<
+    Record<string, boolean>
+  >({});
+  const [commentsVisible, setCommentsVisible] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Get current user session and router for navigation
   const { data: session } = useSession();
   const router = useRouter();
 
   // Helper functions for managing nested comments
   // Add a new reply to the correct parent comment
-  const insertReply = (list: Comment[], parentId: string, newComment: Comment): Comment[] =>
+  const insertReply = (
+    list: Comment[],
+    parentId: string,
+    newComment: Comment
+  ): Comment[] =>
     list.map((c) =>
       c.id === parentId
         ? { ...c, replies: [...(c.replies || []), newComment] }
@@ -45,13 +55,18 @@ export function PostCard({ post }: PostCardProps) {
   const deleteCommentFromList = (list: Comment[], id: string): Comment[] =>
     list
       .filter((c) => c.id !== id)
-      .map((c) => ({ ...c, replies: deleteCommentFromList(c.replies || [], id) }));
+      .map((c) => ({
+        ...c,
+        replies: deleteCommentFromList(c.replies || [], id),
+      }));
 
   // Handle deleting a comment
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("Delete this comment?")) return;
     try {
-      const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
+      const res = await fetch(`/api/comments/${commentId}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error("Failed to delete");
       setComments((prev) => deleteCommentFromList(prev, commentId));
     } catch (err) {
@@ -87,9 +102,6 @@ export function PostCard({ post }: PostCardProps) {
     setCommentsVisible((prev) => !prev);
   };
 
- 
-
-
   // Submit a new comment or reply
   const submitComment = async (parentId?: string) => {
     const content = replyContents[parentId || "root"];
@@ -112,7 +124,8 @@ export function PostCard({ post }: PostCardProps) {
       const newComment: Comment = await res.json();
 
       // Add comment to the list (either as top-level or nested reply)
-      if (parentId) setComments((prev) => insertReply(prev, parentId, newComment));
+      if (parentId)
+        setComments((prev) => insertReply(prev, parentId, newComment));
       else setComments((prev) => [newComment, ...prev]);
 
       // Clear the input and hide the reply form
@@ -125,8 +138,6 @@ export function PostCard({ post }: PostCardProps) {
     }
   };
 
- 
-
   // Render the post card
   return (
     <div className="w-full flex justify-center">
@@ -134,7 +145,9 @@ export function PostCard({ post }: PostCardProps) {
         {/* Post header with author name and timestamp */}
         <div className="mb-3 flex justify-between items-center">
           <p className="font-semibold">{post.author?.name || "Unknown"}</p>
-          <span className="text-xs text-neutral-500">{timeAgo(post.createdAt)}</span>
+          <span className="text-xs text-neutral-500">
+            {timeAgo(post.createdAt)}
+          </span>
         </div>
 
         {/* Post content - clickable to go to post detail page */}
@@ -153,7 +166,11 @@ export function PostCard({ post }: PostCardProps) {
             onChange={(e) => handleChange("root", e.target.value)}
             className="flex-1 text-sm"
           />
-          <Button size="sm" disabled={isSubmitting} onClick={() => submitComment()}>
+          <Button
+            size="sm"
+            disabled={isSubmitting}
+            onClick={() => submitComment()}
+          >
             {isSubmitting ? "..." : "Send"}
           </Button>
         </div>
@@ -167,7 +184,11 @@ export function PostCard({ post }: PostCardProps) {
             onClick={toggleCommentsVisibility}
             disabled={loadingComments}
           >
-            {loadingComments ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
+            {loadingComments ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <MessageSquare size={14} />
+            )}
           </Button>
           {post.commentCount ?? comments.length} Comments
         </div>

@@ -1,5 +1,4 @@
-//  Database schema definition using Prisma ORM
-// Defines the data models for the Threadly social media application
+
 
 // Prisma client generator configuration
 generator client {
@@ -44,5 +43,5 @@ model Comment {
   parentId   String?   // Parent comment ID (null for top-level comments)
   parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id]) // Self-referencing for replies
   replies    Comment[] @relation("CommentReplies") // Nested replies
-  createdAt  DateTime  @default(now()) // Auto-generated timestamp
+  createdAt  DateTime  @default(now()) 
 }
