@@ -45,7 +45,7 @@ export default function ThreadPage() {
     fetchPost();
   }, [id]);
 
-  // --- Conditional rendering for states ---
+  //  Conditional rendering for states 
 
   if (loading) {
     return (
@@ -79,7 +79,7 @@ export default function ThreadPage() {
     );
   }
 
-  // --- Main render ---
+  //  Main render 
   return (
     <div className="flex flex-col items-center min-h-screen bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 py-10 px-4">
       <div className="w-full max-w-2xl">

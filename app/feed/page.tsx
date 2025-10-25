@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Post } from "@/types/types";
 import { Card } from "@/components/ui/card";
  
-import Sidebar from "@/components/sidebar/sidebar";
+import { Sidebar } from "@/components/sidebar/sidebar";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -19,21 +19,19 @@ import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton"; 
 
 export default function FeedPage() {
-
+  
   // state management
-
-  const [posts, setPosts] = useState<Post[]>([]);        // All posts from database
-  const [newPost, setNewPost] = useState("");           // Text for new post being typed
-  const [loading, setLoading] = useState(false);        // Loading state for posts
+  const [posts, setPosts] = useState<Post[]>([]);       
+  const [newPost, setNewPost] = useState("");         
+  const [loading, setLoading] = useState(false);        
   const [mounted, setMounted] = useState(false);         // Prevent hydration issues
   
  
   // authentication and navigation
  
   const { data: session, status } = useSession();       // Get current user info
-  const router = useRouter();                          // For page navigation
-  const { theme, setTheme } = useTheme();               // Dark/light mode toggle
-
+  const router = useRouter();                         
+  const { theme, setTheme } = useTheme();               
   
  
   // If user is not logged in, redirect them to login page

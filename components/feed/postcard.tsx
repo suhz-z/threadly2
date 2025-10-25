@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 import { Skeleton } from "../ui/skeleton";
 import { useRouter } from "next/navigation";
 import { timeAgo } from "@/lib/time";
-import CommentThread from "@/components/comments/comment-thread";
+import { CommentThread } from "@/components/comments/comment-thread";
 
 // Props for the post card component
 interface PostCardProps {

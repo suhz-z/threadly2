@@ -64,4 +64,3 @@ export function Sidebar({onHomeClick, onToggleTheme, isDark, onLogout,}: Sidebar
   );
 }
 
-export default Sidebar;

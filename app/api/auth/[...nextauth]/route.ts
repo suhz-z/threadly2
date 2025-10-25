@@ -38,26 +38,26 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     
-    // ========================================================================
+    
     // GOOGLE OAUTH LOGIN
-    // ========================================================================
+    
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
   ],
   
-  // ========================================================================
+ 
   // SESSION CONFIGURATION
-  // ========================================================================
+ 
   session: {
     strategy: "jwt" as const, // Store session data in JWT token (not database)
   },
   secret: process.env.NEXTAUTH_SECRET, // Secret key to sign JWT tokens
   
-  // ========================================================================
+ 
   // OAUTH CALLBACKS
-  // ========================================================================
+  
   callbacks: {
     // This runs when user signs in with Google
     async signIn({ user, account }) {
